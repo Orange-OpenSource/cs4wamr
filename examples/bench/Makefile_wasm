@@ -1,0 +1,80 @@
+
+COMPILER_OPTIONS += -Wall \
+	--target=wasm32-unknown-unknown-wasm \
+	-O3 -nostdlib \
+	-ferror-limit=0 \
+	-Os \
+	-ffunction-sections \
+	-fdata-sections \
+	-fvisibility=hidden \
+	-flto \
+	-fno-exceptions \
+
+LINKER_FLAGS+= -z stack-size=1024 \
+    -Wl,--global-base=16 \
+	-Wl,--initial-memory=65536 \
+	-Wl,--export-dynamic \
+	-Wl,--export=__heap_base \
+	-Wl,--export=__data_end \
+	-Wl,--allow-undefined \
+	-Wl,--no-entry \
+	-Wl,--strip-all \
+	-Wl,--gc-sections \
+	-Wl,--lto-O3 \
+ 	-Wl,--compress-relocations \
+
+#WAMRC_ARGS ?= --target=thumbv4t --cpu=cortex-m4 --target-abi=eabihf
+
+ifeq ($(BOARD),arduino-nano-33-ble)
+WAMRC_ARGS ?= wamrc --xip --target=thumbv7em --cpu=cortex-m4 --target-abi=eabihf --enable-memory-profiling --stack-bounds-checks=1 --bounds-checks=1  --enable-builtin-intrinsics=llvm.experimental.constrained.fadd.f64,llvm.experimental.constrained.fmul.f64,i32_trunc_f64_s,f64_promote_f32,f64_cmp
+else ifeq ($(BOARD),esp32-wroom-32)
+WAMRC_ARGS ?= wamrc --xip --target=xtensa --cpu=esp32 --opt-level=0 --size-level=0 --stack-bounds-checks=1 --enable-memory-profiling  --bounds-checks=1 #--enable-builtin-intrinsics=llvm.experimental.constrained.fadd.f32,llvm.experimental.constrained.fadd.f64,llvm.experimental.constrained.fmul.f64,llvm.experimental.constrained.fdiv.f32,llvm.fabs.f64,i32_trunc_f64_s,f64_promote_f32,f64_cmp,i32.const,i64.const,f32.const,f64.const,i32.div_u  # llvm.experimental.constrained.fadd.f64,llvm.experimental.constrained.fmul.f64,i32_trunc_f64_s,f64_promote_f32,f64_cmp
+else ifeq ($(BOARD),nrf9160dk)
+WAMRC_ARGS ?= wamrc --xip --target=thumbv8m.main --cpu=cortex-m33 --target-abi=eabihf --enable-memory-profiling --stack-bounds-checks=1 --bounds-checks=1  						--enable-builtin-intrinsics=llvm.experimental.constrained.fadd.f64,llvm.experimental.constrained.fmul.f64,i32_trunc_f64_s,f64_promote_f32,f64_cmp
+else
+WAMRC_ARGS ?= echo board configuration for WAMRC AoT compilation \n\n\n
+endif
+
+clean:
+	-rm *.wasm
+	-rm *_wasm.h
+	-rm *.aot
+	-rm *_aot.h
+
+%.wasm: %.c
+	/usr/bin/clang $(COMPILER_OPTIONS) $(LINKER_FLAGS) $< -o $@
+
+
+%.wasm: %/output.wasm
+	cp  $< $@
+
+%_wasm.h: %.wasm
+	rm -rf $@
+	xxd -i $< $@
+
+%.aot: %.wasm
+	$(WAMRC_ARGS) -o $@ $< 
+
+%_aot.h: %.aot
+	rm -rf $@
+	echo -n "__attribute__ ((aligned (4))) const " > $@
+	xxd -i $< >> $@
+
+PROJECT_BASE = $(abspath ${CURDIR}/../../../../..)
+MODEL_DIR ?= ./model
+
+clean_model:
+	rm -rf ${MODEL_DIR}
+
+#rm -r "$TARGET_MODEL_DIR" 2> /dev/null || true
+
+configure_model: clean_model
+	bash ${PROJECT_BASE}/scripts/create_example_tinyml.bash "${MODEL_DIR}"
+	sed -i '102,+33d' ${MODEL_DIR}/mlmci/mlmci_impl.c 
+
+
+model/: configure_model
+model/output.wasm: model/
+	make -C model
+
+.SECONDARY:

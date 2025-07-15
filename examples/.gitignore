@@ -1,0 +1,8 @@
+evaluation-examples
+new-evaluations
+bin
+*_wasm.h
+*_aot.h
+*.aot
+*.wasm
+*.tflite

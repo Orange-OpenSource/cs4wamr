@@ -1,0 +1,8 @@
+INJECT_FOR_SWAP ?= 1
+USE_WAMR_ENV_THREAD ?= 1
+USE_WAMR_ENV ?= 0
+USE_SHELL = 1
+
+DEVELHELP ?= 0
+
+include ../../Makefile_riot

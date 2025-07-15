@@ -1,0 +1,7 @@
+[submodule "dependencies/RIOT"]
+	path = dependencies/RIOT
+	url = https://github.com/RIOT-OS/RIOT.git
+	branch = 2025.01-branch
+[submodule "dependencies/RIOT-ML"]
+	path = dependencies/RIOT-ML
+	url = https://github.com/zhaolanhuang/RIOT-ML.git

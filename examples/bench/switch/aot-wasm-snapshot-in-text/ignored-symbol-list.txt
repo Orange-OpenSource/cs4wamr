@@ -1,0 +1,4 @@
+native_symbols_libc_builtin
+native_global_defs
+target_sym_map
+quick_aot_entries

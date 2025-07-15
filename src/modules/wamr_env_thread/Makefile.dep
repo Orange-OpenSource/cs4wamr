@@ -1,0 +1,3 @@
+ifneq (,$(filter wamr_env_thread,$(USEMODULE)))
+  USEMODULE += wamr_env sched_cb
+endif

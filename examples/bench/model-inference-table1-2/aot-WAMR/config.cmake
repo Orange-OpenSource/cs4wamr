@@ -1,0 +1,7 @@
+
+include(${CMAKE_CURRENT_LIST_DIR}/../../config.cmake)
+
+set (WAMR_BUILD_AOT 1) 
+set (WAMR_BUILD_INTERP 0)
+#set (WAMR_BUILD_MEMORY_PROFILING 1)
+set (WAMR_BUILD_QUICK_AOT_ENTRY 1)

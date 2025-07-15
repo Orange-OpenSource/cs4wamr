@@ -1,0 +1,3 @@
+ifneq (,$(filter wamr_env,$(USEMODULE)))
+  USEMODULE += multi_static
+endif
