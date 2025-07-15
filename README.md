@@ -1,17 +1,17 @@
 
-# WAMR Context Switch Toolkit
+# CS4WAMR (Context Switching for WAMR)
 
 ## Overview
 
 The repository proposes a toolkit which implements a configuration switching mechanism to allows running multiple instances of [WebAssembly Micro Runtime (WAMR)](https://github.com/bytecodealliance/wasm-micro-runtime/) at the same time on single-core microcontrollers. 
 
 
-## Context-switching mechanism
+### Context-switching mechanism
 
 The mechanism consists of running multiples instances of WAMR by saving the current instance, and creating or loading a new one. 
 
 
-## Components
+### Components
 
 To use the mechanism, the tool is composed in two components:
 
@@ -59,4 +59,14 @@ The toolkit and examples are made for the [RIOT-OS](https://github.com/RIOT-OS/R
 
 The library has been tested on the Arduino Nano 33 BLE, the DWM1001 and the nRF9160DK.
 
+## License
 
+Copyright (c) Orange
+
+This code is released under the MIT License. See the [LICENSE](./LICENCE) file for more information.
+
+## Contributors
+
+- Bastien BUIL: Conceptualization and Software
+- Samuel LEGOUIX: Conceptualization
+- Chrystel GABER: Conceptualization
