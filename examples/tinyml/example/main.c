@@ -43,19 +43,35 @@
 #include <stdalign.h>
 #include <stddef.h>
 
-#define WAMR_ENV_THREAD_STACK_SIZE 2148
+#define WAMR_ENV_THREAD_STACK_SIZE 3100
 #define ERROR_BUFFER_SIZE 128
+
+// This might require tune RAM usage
+#define ENABLE_MODEL_RESTORE_BEFORE_INFERENCE 1
 
 const uint32_t stack_size = 1;
 const uint32_t heap_size = 0;
 
-char env_buffer0[21200];
-char env_buffer1[128000];
-char env_buffer2[21200];
+char env_buffer0[8970];
+char env_buffer1[107000];
+char env_buffer2[8970];
+
+/**
+ * If you use a newer version of WAMR, you can use
+ *
+ * char env_buffer0[9970];
+ * char env_buffer1[100000];
+ * char env_buffer2[10000];
+ */
 
 wamr_env_thread_t saved_env_model_thread;
 wamr_env_thread_number_t saved_env_model_number = -1;
-char saving_model_buffer[15000];
+
+#if ENABLE_MODEL_RESTORE_BEFORE_INFERENCE
+char saving_model_buffer[107000];
+#endif
+
+mutex_t call_model_mutex = (mutex_t)MUTEX_INIT;
 
 #define DWT_CYCCNT (unsigned int volatile *)0xE0001004
 #define DWT_CTRL (unsigned int volatile *)0xE0001000
@@ -73,21 +89,27 @@ char saving_model_buffer[15000];
 bool call_model(wasm_exec_env_t exec_env, char *input, unsigned int input_size, char *output, unsigned int output_size)
 {
     unsigned int t1, t2;
-    t1 = (unsigned int)*DWT_CYCCNT;
-    wamr_env_thread_restored(ENV_1, &saved_env_model_thread, saving_model_buffer, sizeof(saving_model_buffer));
-    t2 = (unsigned int)*DWT_CYCCNT;
-    BENCH_log("restore_time", t2 - t1, "tick");
-    printf("input %p %d\n", input, input_size);
     uint32_t argv[2];
     unsigned int input_address;
     char *native_input_address;
     unsigned int output_address;
     char *native_output_address;
+
+    mutex_lock(&call_model_mutex);
+    t1 = (unsigned int)*DWT_CYCCNT;
+#if ENABLE_MODEL_RESTORE_BEFORE_INFERENCE
+    wamr_env_thread_restored(ENV_1, &saved_env_model_thread, saving_model_buffer, sizeof(saving_model_buffer));
+#endif
+
+    t2 = (unsigned int)*DWT_CYCCNT;
+    BENCH_log("restore_time", t2 - t1, "tick");
+    printf("input %p %d\n", input, input_size);
     printf("call_model was called\n");
     int failed = wamr_env_thread_call_func_sub_env_with_args(ENV_1, MODULE_INST_SLOT_0, FUNCTION_SLOT_0, 0, argv, true);
     if (failed)
     {
         printf("Model error: loading input\n");
+        mutex_unlock(&call_model_mutex);
         return false;
     }
     input_address = argv[0];
@@ -96,6 +118,7 @@ bool call_model(wasm_exec_env_t exec_env, char *input, unsigned int input_size, 
     if (failed)
     {
         printf("Model error: loading output\n");
+        mutex_unlock(&call_model_mutex);
         return false;
     }
     output_address = argv[0];
@@ -104,6 +127,7 @@ bool call_model(wasm_exec_env_t exec_env, char *input, unsigned int input_size, 
         !wamr_env_thread_validate_app_addr(ENV_1, MODULE_INST_SLOT_0, output_address, output_size))
     {
         printf("Model error: invalid model error\n");
+        mutex_unlock(&call_model_mutex);
         return false;
     }
     native_input_address = wamr_env_thread_addr_app_to_native(ENV_1, MODULE_INST_SLOT_0, input_address);
@@ -113,9 +137,11 @@ bool call_model(wasm_exec_env_t exec_env, char *input, unsigned int input_size, 
     if (failed)
     {
         printf("Model error: failed running model\n");
+        mutex_unlock(&call_model_mutex);
         return false;
     }
     memcpy(output, native_output_address, output_size);
+    mutex_unlock(&call_model_mutex);
     return true;
 }
 
@@ -128,7 +154,7 @@ int main(void)
 
     wamr_env_thread_init();
     DEBUG("save default ok\n");
-    int failed = wamr_env_thread_init_env(ENV_0, env_buffer0, sizeof(env_buffer0), WAMR_ENV_THREAD_STACK_SIZE,
+    int failed = wamr_env_thread_init_env(ENV_0, env_buffer0, sizeof(env_buffer0), WAMR_ENV_THREAD_STACK_SIZE - 1,
                                           ERROR_BUFFER_SIZE);
     if (failed)
     {
@@ -140,11 +166,11 @@ int main(void)
     {
         printf("env init 1 failed\n");
     }
-    failed = wamr_env_thread_init_env(ENV_2, env_buffer2, sizeof(env_buffer2), WAMR_ENV_THREAD_STACK_SIZE,
+    failed = wamr_env_thread_init_env(ENV_2, env_buffer2, sizeof(env_buffer2), WAMR_ENV_THREAD_STACK_SIZE + 1,
                                       ERROR_BUFFER_SIZE);
     if (failed)
     {
-        printf("env init 1 failed\n");
+        printf("env init 2 failed\n");
     }
     wamr_env_thread_register_natives(ENV_0, "env", native_symbols_call_model,
                                      sizeof(native_symbols_call_model) / sizeof(NativeSymbol));
@@ -227,7 +253,10 @@ int main(void)
     DEBUG("Loaded module and function in env 1\n");
 
     wamr_env_thread_call_func_plain_exec_with_args(ENV_1, MODULE_SLOT_0, FUNCTION_SLOT_3, 0, NULL);
+
+#if ENABLE_MODEL_RESTORE_BEFORE_INFERENCE
     wamr_env_thread_save(ENV_1, &saved_env_model_thread, saving_model_buffer, sizeof(saving_model_buffer));
+#endif
     wamr_env_thread_call_func(ENV_0, MODULE_SLOT_0, FUNCTION_SLOT_0);
     wamr_env_thread_call_func(ENV_2, MODULE_SLOT_0, FUNCTION_SLOT_0);
     DEBUG("\n==\n");

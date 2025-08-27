@@ -1,11 +1,21 @@
 
 This example evaluates the inference speed on microcontrollers natively, and with WAMR interpreter and WAMR AoT (Ahead-of-Time compilation).
+The example uses RIOT-ML to generate the machine learning inference code.
+
+
+# Setup RIOT_ML
+
+You must install Apache TVM to be used by RIOT-ML. To do this, you can use an automated script available on:
+
+```bash
+bash ../../../scripts/install-RIOT-ML.bash
+```
 
 # Generating native model example
 
 To generate native model example, run in the current folder:
 
-```
+```bash
 ../../../scripts/create_example_tinyml.bash
 cp -r model-template/* model
 ```

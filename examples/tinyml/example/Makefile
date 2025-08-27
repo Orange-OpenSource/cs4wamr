@@ -41,6 +41,9 @@ build: all update-elf update-bin
 configure_model:
 	bash ./scripts/generate_model_dir.bash
 
+setup_riotml:
+	bash ./scripts/setup_riotml.bash
+
 compile_wasm_module:
 	make -C wasm
 
@@ -52,10 +55,10 @@ update-elf:
 
 update-bin: 
 	$(Q)$(OBJCOPY) $(OFLAGS) -Obinary $(ELFFILE) $(BINFILE)
-	echo ESPTOOL: $(ESPTOOL)
-	$(Q)$(ESPTOOL) --chip $(FLASH_CHIP) elf2image --flash_mode $(FLASH_MODE) \
-		--flash_size $(FLASH_SIZE)MB --flash_freq $(FLASH_FREQ) $(FLASH_OPTS) \
-		-o $(ELFFILE).bin $(ELFFILE)
+#	 echo ESPTOOL: $(ESPTOOL)
+#	 $(Q)$(ESPTOOL) --chip $(FLASH_CHIP) elf2image --flash_mode $(FLASH_MODE) \
+#		--flash_size $(FLASH_SIZE)MB --flash_freq $(FLASH_FREQ) $(FLASH_OPTS) \
+#		-o $(ELFFILE).bin $(ELFFILE)
 
 check_warn:
 	@[ $(WARN_UNUSED_SWAP) -eq 1 ] && \

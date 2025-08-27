@@ -7,14 +7,13 @@
  * see the "LICENSE" file for more details or https://opensource.org/license/mit
  *
  */
+#include "input.h"
 #include "mlmci.h"
 #include <benchmark.h>
 #include <stdio.h>
 #include <string.h>
-#include "input.h"
 extern mlmodel_t *model_ptr;
 int printf(const char *, ...);
-
 
 void init(void)
 {
@@ -55,7 +54,6 @@ void run(void)
 {
     mlmodel_inference(model_ptr);
 }
-
 
 void load_input(void)
 {

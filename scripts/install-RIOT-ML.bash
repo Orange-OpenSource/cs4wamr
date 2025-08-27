@@ -7,7 +7,7 @@ TVM_HOME="$PROJECT_BASE/dependencies/RIOT-ML/tvm"
 python3 -m venv "$PROJECT_BASE/.venv"
 # shellcheck disable=SC1091
 source "$PROJECT_BASE/.venv/bin/activate"
-pip3 install setuptools Cython numpy tflite
+pip3 install setuptools Cython numpy tflite decorator psutil packaging attrs typing_extensions
 
 (cd "$PROJECT_BASE/dependencies/RIOT-ML" && git clone --branch v0.18.0 --recursive https://github.com/apache/tvm tvm)
 
