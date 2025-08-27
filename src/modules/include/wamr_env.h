@@ -11,7 +11,9 @@
 #define WAMR_ENV_HEADER
 
 #include "multi_static.h"
+#include <stddef.h>
 #include <wasm_export.h>
+#include <stdio.h>
 
 #define WAMR_ENV_FUNCTION_SLOT_COUNT 5
 #define WAMR_ENV_MODULE_SLOT_COUNT 3
@@ -49,6 +51,62 @@ typedef struct wamr_env_s
     uint32_t error_buf_size;
 
 } wamr_env_t;
+
+/**
+ * @brief Return if the given instance is loaded
+ *
+ * This function is automatically called by wamr_env_call_func_with_args
+ *
+ * @param[in] env indice of the environment of the function
+ * @param[in] mod_inst_slot slot of the module instance to check
+ * @return 1 if module is loaded, 0 elsewhere
+ */
+static inline bool wamr_env_is_instance_loaded(wamr_env_t *env, unsigned int mod_inst_slot)
+{
+    if (mod_inst_slot >= WAMR_ENV_MODULE_INSTANCE_SLOT_COUNT)
+    {
+        printf("Invalid module instance slot\n");
+        return false;
+    }
+    if (env->mod_inst[mod_inst_slot] == NULL)
+    {
+        printf("Module instance not loaded\n");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * @brief Return if the given function is loaded
+ *
+ * This function is automatically called by wamr_env_call_func_with_args
+ *
+ * @param[in] env indice of the environment of the function
+ * @param[in] mod_inst_slot slot of the module instance with the function to check
+ * @param[in] fct_slot slot of the function to check
+ * @return 1 if function is loaded, 0 elsewhere
+ */
+static inline int wamr_env_is_func_loaded(wamr_env_t *env, unsigned int mod_inst_slot, unsigned int fct_slot)
+{
+    if (fct_slot >= WAMR_ENV_FUNCTION_SLOT_COUNT)
+    {
+        printf("Invalid function slot\n");
+        return 0;
+    }
+
+    if (!wamr_env_is_instance_loaded(env, mod_inst_slot))
+    {
+        printf("Invalid module instance slot\n");
+        return 0;
+    }
+
+    if (env->func[fct_slot] == NULL)
+    {
+        printf("Function not loaded\n");
+        return 0;
+    }
+    return 1;
+}
 
 /**
  * @brief Swap to the environment and call the function loaded in the given environment at the given slot

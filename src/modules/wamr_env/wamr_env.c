@@ -160,25 +160,13 @@ int wamr_env_call_func_with_args(wamr_env_t *env, unsigned int mod_inst_slot, un
 {
     wamr_env_swap(env);
 
-    if (fct_slot >= WAMR_ENV_FUNCTION_SLOT_COUNT)
+    bool success = wamr_env_is_func_loaded(env, mod_inst_slot, fct_slot);
+    if (!success)
     {
-        printf("Invalid function slot\n");
-        return 1;
+        return !success;
     }
 
-    if (mod_inst_slot >= WAMR_ENV_MODULE_INSTANCE_SLOT_COUNT)
-    {
-        printf("Invalid module instance slot\n");
-        return 1;
-    }
-
-    if (env->func[fct_slot] == NULL || env->exec_env[mod_inst_slot] == NULL)
-    {
-        printf("Function not loaded\n");
-        return 1;
-    }
-
-    bool success = wasm_runtime_call_wasm(env->exec_env[mod_inst_slot], env->func[fct_slot], argc, (uint32_t *)argv);
+    success = wasm_runtime_call_wasm(env->exec_env[mod_inst_slot], env->func[fct_slot], argc, (uint32_t *)argv);
     if (!success)
     {
         printf("Error when calling function %s\n", wasm_runtime_get_exception(env->mod_inst[mod_inst_slot]));
@@ -214,14 +202,8 @@ int wamr_env_register_module(wamr_env_t *env, const char *module_name, unsigned 
 
 bool wamr_env_validate_app_addr(wamr_env_t *env, unsigned int mod_inst_slot, unsigned int app_offset, unsigned int size)
 {
-    if (mod_inst_slot >= WAMR_ENV_MODULE_INSTANCE_SLOT_COUNT)
+    if (!wamr_env_is_instance_loaded(env, mod_inst_slot))
     {
-        printf("Invalid module instance slot\n");
-        return false;
-    }
-    if (env->mod_inst[mod_inst_slot] == NULL)
-    {
-        printf("Module instance not loaded\n");
         return false;
     }
     wamr_env_swap(env);
@@ -230,14 +212,8 @@ bool wamr_env_validate_app_addr(wamr_env_t *env, unsigned int mod_inst_slot, uns
 
 void *wamr_env_addr_app_to_native(wamr_env_t *env, unsigned int mod_inst_slot, unsigned int app_offset)
 {
-    if (mod_inst_slot >= WAMR_ENV_MODULE_INSTANCE_SLOT_COUNT)
+    if (!wamr_env_is_instance_loaded(env, mod_inst_slot))
     {
-        printf("Invalid module instance slot\n");
-        return false;
-    }
-    if (env->mod_inst[mod_inst_slot] == NULL)
-    {
-        printf("Module instance not loaded\n");
         return false;
     }
     wamr_env_swap(env);
@@ -246,14 +222,8 @@ void *wamr_env_addr_app_to_native(wamr_env_t *env, unsigned int mod_inst_slot, u
 
 uint32_t wamr_env_addr_native_to_app(wamr_env_t *env, unsigned int mod_inst_slot, void *native_address)
 {
-    if (mod_inst_slot >= WAMR_ENV_MODULE_INSTANCE_SLOT_COUNT)
+    if (!wamr_env_is_instance_loaded(env, mod_inst_slot))
     {
-        printf("Invalid module instance slot\n");
-        return false;
-    }
-    if (env->mod_inst[mod_inst_slot] == NULL)
-    {
-        printf("Module instance not loaded\n");
         return false;
     }
     wamr_env_swap(env);

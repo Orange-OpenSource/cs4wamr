@@ -44,16 +44,19 @@ kernel_pid_t wamr_env_thread_get_pid(wamr_env_thread_number_t env)
 
 void wamr_env_thread_swap(wamr_env_thread_number_t env)
 {
+    unsigned state = irq_disable();
     if (env_threads[env].env_state == ENV_UNINITIALIZED)
     {
         printf("Swapping to unintialized thread %ld\n", env);
+        irq_restore(state);
         return;
     }
     if (env_threads[env].env_state == ENV_IN_SUB_ENV)
     {
-        return;
+        printf("Swapping to environment: running another environment (Sub env state): env %ld\n", env);
     }
     wamr_env_swap(&env_threads[env].env);
+    irq_restore(state);
 }
 
 static void _wamr_env_thread_sched_callback(kernel_pid_t active, kernel_pid_t next)
@@ -187,6 +190,7 @@ int wamr_env_thread_call_func_sub_env_with_args(wamr_env_thread_number_t new_env
             printf("Cannot run sub env function if env is already running\n");
             return 1;
         }
+        thread_yield();
     }
 
     int failed = wamr_env_thread_call_func_plain_exec_with_args(new_env, mod_inst_slot, fct_slot, argc, argv);
@@ -201,10 +205,24 @@ int wamr_env_thread_call_func_plain_exec_with_args(wamr_env_thread_number_t env,
 {
     env_threads[env].thread_pid = thread_getpid();
     env_threads[env].env_state = ENV_RUNNING;
-    int failed = wamr_env_call_func_with_args(&env_threads[env].env, mod_inst_slot, fct_slot, argc, argv);
+    wamr_env_thread_swap(env);
+
+    bool success = wamr_env_is_func_loaded(&env_threads[env].env, mod_inst_slot, fct_slot);
+    if (!success)
+    {
+        return !success;
+    }
+
+    success = wasm_runtime_call_wasm(env_threads[env].env.exec_env[mod_inst_slot], env_threads[env].env.func[fct_slot],
+                                     argc, (uint32_t *)argv);
+    if (!success)
+    {
+        printf("wamr_env_thread_call_func_plain_exec_with_args: Error when calling function %s\n",
+               wasm_runtime_get_exception(env_threads[env].env.mod_inst[mod_inst_slot]));
+    }
     env_threads[env].thread_pid = -1;
     env_threads[env].env_state = ENV_STOPPED;
-    return failed;
+    return !success;
 }
 
 int wamr_env_thread_call_func_sub_env(wamr_env_thread_number_t new_env, unsigned int mod_inst_slot,
@@ -355,19 +373,34 @@ int wamr_env_thread_load_mod(wamr_env_thread_number_t env, uint8_t *code, int co
 bool wamr_env_thread_validate_app_addr(wamr_env_thread_number_t env, unsigned int mod_inst_slot,
                                        unsigned int app_offset, unsigned int size)
 {
-    return wamr_env_validate_app_addr(&env_threads[env].env, mod_inst_slot, app_offset, size);
+    if (!wamr_env_is_instance_loaded(&env_threads[env].env, mod_inst_slot))
+    {
+        return false;
+    }
+    wamr_env_thread_swap(env);
+    return wasm_runtime_validate_app_addr(env_threads[env].env.mod_inst[mod_inst_slot], app_offset, size);
 }
 
 void *wamr_env_thread_addr_app_to_native(wamr_env_thread_number_t env, unsigned int mod_inst_slot,
                                          unsigned int app_offset)
 {
-    return wamr_env_addr_app_to_native(&env_threads[env].env, mod_inst_slot, app_offset);
+    if (!wamr_env_is_instance_loaded(&env_threads[env].env, mod_inst_slot))
+    {
+        return false;
+    }
+    wamr_env_thread_swap(env);
+    return wasm_runtime_addr_app_to_native(env_threads[env].env.mod_inst[mod_inst_slot], app_offset);
 }
 
 uint32_t wamr_env_thread_addr_native_to_app(wamr_env_thread_number_t env, unsigned int mod_inst_slot,
                                             void *native_address)
 {
-    return wamr_env_addr_native_to_app(&env_threads[env].env, mod_inst_slot, native_address);
+    if (!wamr_env_is_instance_loaded(&env_threads[env].env, mod_inst_slot))
+    {
+        return false;
+    }
+    wamr_env_thread_swap(env);
+    return wasm_runtime_addr_native_to_app(env_threads[env].env.mod_inst[mod_inst_slot], native_address);
 }
 
 int wamr_env_thread_load_mod_preserve_code(wamr_env_thread_number_t env, uint8_t *code, int code_size,
