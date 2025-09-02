@@ -98,7 +98,7 @@ bool call_model(wasm_exec_env_t exec_env, char *input, unsigned int input_size, 
     mutex_lock(&call_model_mutex);
     t1 = (unsigned int)*DWT_CYCCNT;
 #if ENABLE_MODEL_RESTORE_BEFORE_INFERENCE
-    wamr_env_thread_restored(ENV_1, &saved_env_model_thread, saving_model_buffer, sizeof(saving_model_buffer));
+    wamr_env_thread_restore(ENV_1, &saved_env_model_thread, saving_model_buffer, sizeof(saving_model_buffer));
 #endif
 
     t2 = (unsigned int)*DWT_CYCCNT;

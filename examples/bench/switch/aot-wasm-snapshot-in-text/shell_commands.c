@@ -65,7 +65,7 @@ int load_env(int argc, char **argv)
         printf("Env slot do not match for loading !\n");
         return 1;
     }
-    wamr_env_thread_restored(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
+    wamr_env_thread_restore(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
     printf("loading env  %ld\n", env);
     return 0;
 }
@@ -89,7 +89,7 @@ int fast_load(int argc, char **argv)
         printf("Env slot do not match for loading !\n");
         return 1;
     }
-    wamr_env_thread_restored(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
+    wamr_env_thread_restore(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
     wamr_env_thread_resume(env);
     printf("fast loading env  %ld\n", env);
     return 0;

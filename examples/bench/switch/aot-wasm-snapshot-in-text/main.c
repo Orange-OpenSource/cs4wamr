@@ -56,7 +56,7 @@ mutex_t mutex = MUTEX_INIT;
 bool call_model(wasm_exec_env_t exec_env, char *input, unsigned int input_size, char *output, unsigned int output_size)
 {
     mutex_lock(&mutex);
-    // wamr_env_thread_restored(ENV_1, &saved_env_model_thread, saving_model_buffer, sizeof(saving_model_buffer));
+    // wamr_env_thread_restore(ENV_1, &saved_env_model_thread, saving_model_buffer, sizeof(saving_model_buffer));
     printf("input %p %d\n", input, input_size);
     uint32_t argv[2];
     unsigned int input_address;

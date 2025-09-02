@@ -153,7 +153,7 @@ void wamr_env_thread_save(wamr_env_thread_number_t env, wamr_env_thread_t *savin
  * @param[in] saving_env
  * @param[in] saving_env_thread
  */
-void wamr_env_thread_restored(wamr_env_thread_number_t env, wamr_env_thread_t *saved_env_thread, char *saved_buffer,
+void wamr_env_thread_restore(wamr_env_thread_number_t env, wamr_env_thread_t *saved_env_thread, char *saved_buffer,
                               uint32_t saved_buffer_size);
 
 /**

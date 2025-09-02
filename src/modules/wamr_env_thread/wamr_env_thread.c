@@ -274,7 +274,7 @@ void wamr_env_thread_save(wamr_env_thread_number_t env, wamr_env_thread_t *savin
     irq_restore(state);
 }
 
-void wamr_env_thread_restored(wamr_env_thread_number_t env, wamr_env_thread_t *saved_env_thread, char *saved_buffer,
+void wamr_env_thread_restore(wamr_env_thread_number_t env, wamr_env_thread_t *saved_env_thread, char *saved_buffer,
                               uint32_t saved_buffer_size)
 {
     if (env_threads[env].buffer_size > saved_buffer_size)
