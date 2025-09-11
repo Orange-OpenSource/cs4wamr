@@ -97,8 +97,6 @@ def main(elf_file, wamr_path, external_env_var_name, external_env_count_var_name
         print("Error: No lib symbol matched.")
         return
     
-    #lib_symbols = filter_symbols_with_list(lib_symbols, ignored_symbols)
-    #lib_symbols = filter_symbols_by_type(lib_symbols, ignored_symbols_types)
     groups = [create_first_symbol_group(lib_symbols)]
 
     split_groups_with_other_symbols(groups, other_symbols)

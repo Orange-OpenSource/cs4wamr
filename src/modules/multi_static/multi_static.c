@@ -50,16 +50,10 @@ static void _multi_static_save_static_values(multi_static_env_t *env)
 
 void multi_static_save_default_static_values(void)
 {
-    // DEBUG("%p %li, %p %li = %li\n", (void *)static_values[0].ptr, static_values[0].size, (void
-    // *)static_values[1].ptr,
-    //       static_values[1].size, static_values_count);
-    // printf("Save Static\n");
     for (unsigned int i = 0; i < static_values_count; i++)
     {
-        // printf("Save %p %p %ld \n", default_env_values[i], (void *)static_values[i].ptr, static_values[i].size);
         memcpy(default_env_values[i], (void *)static_values[i].ptr, static_values[i].size);
     }
-    // printf("Save Static Done\n");
 }
 
 void multi_static_swap(multi_static_env_t *env)
@@ -68,7 +62,6 @@ void multi_static_swap(multi_static_env_t *env)
     {
         return;
     }
-    // DEBUG("swap %p\n", env);
     if (current_env != NULL)
     {
         _multi_static_save_static_values(current_env);
