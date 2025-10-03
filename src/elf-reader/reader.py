@@ -131,7 +131,6 @@ if __name__ == "__main__":
     p.add_argument("--wamr", default="/RIOT/build/pkg/wamr/", help="Absolute path to WAMR library")
     p.add_argument("--external_name", default="static_values")
     p.add_argument("--external_count_name", default="static_values_count")
-    p.add_argument("--architecture_prefix", default="static_values_count")
     args = p.parse_args()
     main(args.elf, args.wamr, args.external_name, args.external_count_name)
 

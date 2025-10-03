@@ -17,7 +17,7 @@
 static uint8_t default_env_values[MULTI_STATIC_MAX_NUMBER_STATIC][MULTI_STATIC_MAX_STATIC_SIZE];
 static volatile multi_static_static_values_t static_values[MULTI_STATIC_MAX_NUMBER_STATIC] = {
     {1, 1}}; // Prevent value from being in bss
-static uint32_t static_values_count = MULTI_STATIC_MAX_NUMBER_STATIC;
+static volatile uint32_t static_values_count = MULTI_STATIC_MAX_NUMBER_STATIC;
 static multi_static_env_t *current_env = NULL;
 
 static void _multi_static_reset_static_values(void)

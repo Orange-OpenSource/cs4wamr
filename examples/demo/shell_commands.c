@@ -115,6 +115,6 @@ SHELL_COMMAND(pause, "Make env X sleep", make_thread_sleep);
 SHELL_COMMAND(resume, "Make env X resume", make_thread_resume);
 SHELL_COMMAND(save, "Make env X save", save_env);
 SHELL_COMMAND(fast_save, "Make env X pause, save and resume", fast_save);
-SHELL_COMMAND(load, "Make env X save", load_env);
+SHELL_COMMAND(load, "Make env X load", load_env);
 SHELL_COMMAND(fast_load, "Make env X load and resume", fast_load);
 SHELL_COMMAND(stats, "Get stats on buffer", wamr_buffer_stat);

@@ -124,6 +124,7 @@ static inline int wamr_env_is_func_loaded(wamr_env_t *env, unsigned int mod_inst
 
 /**
  * @brief Swap to the environment and call the function loaded in the given environment at the given slot
+ * If the returns is not 0, you can get error string with wamr_env_get_error_buffer()
  *
  * @param[in] env pointer to the environment structure of the function
  * @param[in] mod_inst_slot slot of the module instance to run
@@ -138,6 +139,7 @@ int wamr_env_call_func_with_args(wamr_env_t *env, unsigned int mod_inst_slot, un
 /**
  * @brief Swap to the correct environment and load a function of a instance module in a given function slot of a given
  * wasm module in a given environment
+ * If the returns is not 0, you can get error string with wamr_env_get_error_buffer()
  *
  * @param[in] env pointer to the environment structure containing the module
  * @param[in] mod_inst_slot indice of the slot in which the module instance containing the function is loaded
@@ -150,6 +152,7 @@ int wamr_env_load_func(wamr_env_t *env, unsigned int mod_inst_slot, unsigned int
 /**
  * @brief Swap to the correct environment and load a module instance in a given module instance slot of a given wasm
  * module in a given environment
+ * If the returns is not 0, you can get error string with wamr_env_get_error_buffer()
  *
  * @param[in] env pointer to the environment structure containing the module
  * @param[in] mod_slot indice of the slot in which the module containing the function is loaded
@@ -162,6 +165,7 @@ int wamr_env_load_mod_inst(wamr_env_t *env, unsigned int mod_slot, unsigned int 
 
 /**
  * @brief Swap to the correct environment and load a wasm module in a given module slot in a given environment
+ * If the returns is not 0, you can get error string with wamr_env_get_error_buffer()
  *
  * @param[in] env pointer to the environment structure in which the module should be loaded
  * @param[in] code code of the wasm module to load. The code may be modified by WAMR and should be loaded as long as the
@@ -174,6 +178,8 @@ int wamr_env_load_mod(wamr_env_t *env, uint8_t *code, int code_size, unsigned in
 
 /**
  * @brief Swap and init the given environment. If the environment is already initialized, reset the environment
+ * If the returns is not 0, you can get error string with wamr_env_get_error_buffer(). Becarefull, wamr_env_get_error_buffer()
+ * might return NULL if the error buffer failed to be allocated
  *
  * @param[in] env pointer to the environment structure to initialize. The structure should be allocated but should not be initialized
  * @param[in] buffer buffer dedicated to the environment
@@ -191,7 +197,7 @@ void wamr_env_init(void);
 /**
  * @brief Unload the current environment, restore WAMR statics to their default state
  */
-void wamr_env_unload_env();
+void wamr_env_unload_env(void);
 
 /**
  * @brief Swap to the given environment
@@ -209,6 +215,7 @@ void wamr_env_swap(wamr_env_t *env);
  * @brief Register native functions callable in the environment
  * Note: WASM runtime will not allocate memory to clone the native symbols, so user must ensure the array can be used
  * forever
+ * If the returns is not 0, you can get error string with wamr_env_get_error_buffer()
  *
  * @param[in] env indice of environment in which native functions must be registered
  * @param[in] module_name name of the module of the native functions (if you do not know the good value, use "env")
@@ -221,6 +228,7 @@ int wamr_env_register_natives(wamr_env_t *env, const char *module_name, NativeSy
 
 /**
  * @brief Swap and register module, to be callable by other modules
+ * If the returns is not 0, you can get error string with wamr_env_get_error_buffer()
  *
  * @param[in] env indice of environment in which the module must be registered
  * @param[in] module_name name to be given to the module
@@ -229,7 +237,15 @@ int wamr_env_register_natives(wamr_env_t *env, const char *module_name, NativeSy
  */
 int wamr_env_register_module(wamr_env_t *env, const char *module_name, unsigned int mod_slot);
 
+/**
+ * @brief Get the error buffer of wamr_env.
+ * The error buffer is allocated, unless the wamr_env is not initialized, so you should only check
+ * if the returns value is not NULL after calling wamr_env_init_env()
+ *
+ * @return error buffer containing string explaining the error or NULL if the env is not initialized.
+ */
 char *wamr_env_get_error_buffer(wamr_env_t *env);
+
 bool wamr_env_validate_app_addr(wamr_env_t *env, unsigned int mod_inst_slot, unsigned int app_offset,
                                 unsigned int size);
 
