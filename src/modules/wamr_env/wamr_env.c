@@ -9,7 +9,7 @@
  */
 
 #include "wamr_env.h"
-#include "multi_static.h"
+#include "static_context_switcher.h"
 #include <debug.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -21,12 +21,12 @@
 
 void wamr_env_swap(wamr_env_t *env)
 {
-    return multi_static_swap(&env->multi_env);
+    return static_context_switcher_swap(&env->multi_env);
 }
 
 void wamr_env_init(void)
 {
-    multi_static_save_default_static_values();
+    static_context_switcher_save_default_static_values();
 }
 
 static int _wamr_env_init_struct(wamr_env_t *env, uint32_t error_buffer_size)
@@ -54,7 +54,7 @@ static int _wamr_env_init_struct(wamr_env_t *env, uint32_t error_buffer_size)
 
 int wamr_env_init_env(wamr_env_t *env, char *buffer, uint32_t buffer_size, uint32_t error_buffer_size)
 {
-    multi_static_reset_env();
+    static_context_switcher_reset_env();
     env->error_buf = NULL;
 
     RuntimeInitArgs init_args = {.mem_alloc_type = Alloc_With_Pool,
@@ -71,10 +71,10 @@ int wamr_env_init_env(wamr_env_t *env, char *buffer, uint32_t buffer_size, uint3
     {
         return 1;
     }
-    failed = multi_static_init_env(&env->multi_env, &wasm_runtime_malloc);
+    failed = static_context_switcher_init_env(&env->multi_env, &wasm_runtime_malloc);
     if (failed)
     {
-        snprintf(env->error_buf, env->error_buf_size, "wamr_env error: Failed to initialize multi_static_env\n");
+        snprintf(env->error_buf, env->error_buf_size, "wamr_env error: Failed to initialize static_context_switcher_env\n");
         return 1;
     }
     return 0;
@@ -82,7 +82,7 @@ int wamr_env_init_env(wamr_env_t *env, char *buffer, uint32_t buffer_size, uint3
 
 void wamr_env_unload_env(void)
 {
-    multi_static_reset_env();
+    static_context_switcher_reset_env();
 }
 
 int wamr_env_load_mod(wamr_env_t *env, uint8_t *code, int code_size, unsigned int mod_slot)
@@ -249,10 +249,10 @@ char *wamr_env_get_error_buffer(wamr_env_t *env)
 
 void wamr_env_print(wamr_env_t *env)
 {
-    multi_static_print_env(&env->multi_env);
+    static_context_switcher_print_env(&env->multi_env);
 }
 
 void wamr_env_print_info(void)
 {
-    multi_static_print_info();
+    static_context_switcher_print_info();
 }

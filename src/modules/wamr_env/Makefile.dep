@@ -1,3 +1,3 @@
 ifneq (,$(filter wamr_env,$(USEMODULE)))
-  USEMODULE += multi_static
+  USEMODULE += static_context_switcher
 endif

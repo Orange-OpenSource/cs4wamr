@@ -24,7 +24,7 @@
 #ifndef WAMR_ENV_HEADER
 #define WAMR_ENV_HEADER
 
-#include "multi_static.h"
+#include "static_context_switcher.h"
 #include <stddef.h>
 #include <wasm_export.h>
 #include <stdio.h>
@@ -59,7 +59,7 @@ typedef struct wamr_env_s
     uint8_t *code[WAMR_ENV_MODULE_SLOT_COUNT];
     int code_size[WAMR_ENV_MODULE_SLOT_COUNT];
 
-    multi_static_env_t multi_env;
+    static_context_switcher_env_t multi_env;
 
     char *error_buf;
     uint32_t error_buf_size;

@@ -17,7 +17,7 @@ To use the mechanism, the tool is composed in two components:
 
 - a Firmware Analyzer Tool: to analyze the produce firmware and recuperate information about the memory of WAMR and inject these information in our library
 - a library to perform the context switch. The library is composed in three sub-libraries:
-    - multi_static: to perform the swapping,
+    - static_context_switcher: to perform the swapping,
     - wamr_env: to use multiple instances of WAMR by automatically using multi-static,
     - wamr_env_thread: to use wamr_env for having dedicated thread for the environments.
 
