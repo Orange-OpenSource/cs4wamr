@@ -78,6 +78,11 @@ int wamr_env_init_env(wamr_env_t *env, char *buffer, uint32_t buffer_size, uint3
     return 0;
 }
 
+void wamr_env_unload_env()
+{
+    multi_static_reset_env();
+}
+
 int wamr_env_load_mod(wamr_env_t *env, uint8_t *code, int code_size, unsigned int mod_slot)
 {
     wamr_env_swap(env);

@@ -7,29 +7,41 @@
  * see the "LICENSE" file for more details or https://opensource.org/license/mit
  *
  */
+/**
+ * @defgroup    multi_static CS Multi Static
+ * @brief       A library to manage context switching for code using static variable
+ *
+ * @{
+ *
+ * @file
+ * @details     This library can be used with the elf reader tool to switch between different instances of 
+ *              an application/library using static variables to store its state. The mecanism works by 
+ *              saving the static variables to store the instance, then recopying back the static variables
+ *              to reload the instance.
+ *
+ * @author      Bastien BUIL <bastien.buil@orange.com>
+ */
+
 #ifndef MULTI_STATIC_HEADER
 #define MULTI_STATIC_HEADER
 
 #include <stdint.h>
 
-#ifndef MAX_STATIC_VALUE_SIZE
-#define MAX_STATIC_VALUE_SIZE 128
+#ifndef MULTI_STATIC_MAX_STATIC_SIZE
+#define MULTI_STATIC_MAX_STATIC_SIZE 128
 #endif
-#define MAX_NUM_EXTERNAL_VALUES 4
-#define EXTERNAL_VALUES_DEFAULT                                                                                        \
-    {                                                                                                                  \
-        {                                                                                                              \
-            1, 1                                                                                                       \
-        }                                                                                                              \
-    } // Prevent value from being in bss
+
+#ifndef MULTI_STATIC_MAX_NUMBER_STATIC
+#define MULTI_STATIC_MAX_NUMBER_STATIC 4
+#endif
 
 /**
  * Environment structure for the variable on the state of an instance of the target library
  */
 typedef struct multi_static_env_s
 {
-    uint8_t *static_values[MAX_NUM_EXTERNAL_VALUES];
-    uint32_t static_values_size[MAX_NUM_EXTERNAL_VALUES]; // Can possibly be remove
+    uint8_t *static_values[MULTI_STATIC_MAX_NUMBER_STATIC];
+    uint32_t static_values_size[MULTI_STATIC_MAX_NUMBER_STATIC]; // Can possibly be remove
 } multi_static_env_t;
 
 /**
@@ -80,3 +92,5 @@ void multi_static_print_env(multi_static_env_t *env);
 void multi_static_print_info(void);
 
 #endif
+
+/** @} */

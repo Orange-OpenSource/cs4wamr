@@ -14,14 +14,15 @@
 #include <stdio.h>
 #include <string.h>
 
-static uint8_t default_env_values[MAX_NUM_EXTERNAL_VALUES][MAX_STATIC_VALUE_SIZE];
-multi_static_static_values_t static_values[MAX_NUM_EXTERNAL_VALUES] = EXTERNAL_VALUES_DEFAULT;
-uint32_t static_values_count = MAX_NUM_EXTERNAL_VALUES;
+static uint8_t default_env_values[MULTI_STATIC_MAX_NUMBER_STATIC][MULTI_STATIC_MAX_STATIC_SIZE];
+static volatile multi_static_static_values_t static_values[MULTI_STATIC_MAX_NUMBER_STATIC] = {
+    {1, 1}}; // Prevent value from being in bss
+static uint32_t static_values_count = MULTI_STATIC_MAX_NUMBER_STATIC;
 static multi_static_env_t *current_env = NULL;
 
 static void _multi_static_reset_static_values(void)
 {
-    if (static_values_count == MAX_NUM_EXTERNAL_VALUES && static_values[0].ptr == static_values[0].size &&
+    if (static_values_count == MULTI_STATIC_MAX_NUMBER_STATIC && static_values[0].ptr == static_values[0].size &&
         static_values[0].ptr == 1)
     {
         printf("Multi-static not initialized. \nPlease use the elf reader to inject static variable location\n");
@@ -77,6 +78,7 @@ void multi_static_reset_env(void)
         _multi_static_save_static_values(current_env);
     }
     _multi_static_reset_static_values();
+    current_env = NULL;
 }
 
 int multi_static_init_env(multi_static_env_t *env, void *(*malloc_func)(unsigned int))

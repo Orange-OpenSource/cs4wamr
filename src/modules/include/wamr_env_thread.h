@@ -7,6 +7,18 @@
  * see the "LICENSE" file for more details or https://opensource.org/license/mit
  *
  */
+/**
+ * @defgroup    wamr_env_thread WAMR env thread
+ * @brief       A library to use WAMR with each container having its own thread and its own instance of WAMR
+ *
+ * @{
+ *
+ * @file
+ * @details     This library manages the usage of WAMR and the management of thread to use WAMR with dedicated
+ *              thread by container
+ *
+ * @author      Bastien BUIL <bastien.buil@orange.com>
+ */
 #ifndef WAMR_ENV_THREAD_HEADER
 #define WAMR_ENV_THREAD_HEADER
 
@@ -249,3 +261,5 @@ uint32_t wamr_env_thread_addr_native_to_app(wamr_env_thread_number_t env, unsign
 void wamr_env_thread_print(wamr_env_thread_number_t env);
 void wamr_env_thread_print_info(void);
 #endif
+
+/** @} */

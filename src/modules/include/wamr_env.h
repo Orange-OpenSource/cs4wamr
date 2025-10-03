@@ -7,6 +7,20 @@
  * see the "LICENSE" file for more details or https://opensource.org/license/mit
  *
  */
+/**
+ * @defgroup    wamr_env WAMR env
+ * @brief       A library to use WAMR with multiple instances
+ *
+ * @{
+ *
+ * @file
+ * @details     This library manages the usage of WAMR with multiple instances. This allows to have dedicated
+ *              WAMR instances for containers. This allows to have more control in container access to native
+ *              function, container memory usage (container cannot use more than the buffer dedicated to their)
+ *              instance and also separate containers memory usage. 
+ *
+ * @author      Bastien BUIL <bastien.buil@orange.com>
+ */
 #ifndef WAMR_ENV_HEADER
 #define WAMR_ENV_HEADER
 
@@ -57,7 +71,7 @@ typedef struct wamr_env_s
  *
  * This function is automatically called by wamr_env_call_func_with_args
  *
- * @param[in] env indice of the environment of the function
+ * @param[in] env pointer to the environment structure of the function
  * @param[in] mod_inst_slot slot of the module instance to check
  * @return 1 if module is loaded, 0 elsewhere
  */
@@ -81,7 +95,7 @@ static inline bool wamr_env_is_instance_loaded(wamr_env_t *env, unsigned int mod
  *
  * This function is automatically called by wamr_env_call_func_with_args
  *
- * @param[in] env indice of the environment of the function
+ * @param[in] env pointer to the environment structure of the function
  * @param[in] mod_inst_slot slot of the module instance with the function to check
  * @param[in] fct_slot slot of the function to check
  * @return 1 if function is loaded, 0 elsewhere
@@ -111,7 +125,7 @@ static inline int wamr_env_is_func_loaded(wamr_env_t *env, unsigned int mod_inst
 /**
  * @brief Swap to the environment and call the function loaded in the given environment at the given slot
  *
- * @param[in] env indice of the environment of the function
+ * @param[in] env pointer to the environment structure of the function
  * @param[in] mod_inst_slot slot of the module instance to run
  * @param[in] fct_slot slot of the function to run
  * @return 0 in case of success, other values elsewhere
@@ -125,7 +139,7 @@ int wamr_env_call_func_with_args(wamr_env_t *env, unsigned int mod_inst_slot, un
  * @brief Swap to the correct environment and load a function of a instance module in a given function slot of a given
  * wasm module in a given environment
  *
- * @param[in] env indice of the environment containing the module
+ * @param[in] env pointer to the environment structure containing the module
  * @param[in] mod_inst_slot indice of the slot in which the module instance containing the function is loaded
  * @param[in] fct_slot indice of the slot in which the function must be loaded
  * @param[in] fct_name name of the function to load
@@ -137,7 +151,7 @@ int wamr_env_load_func(wamr_env_t *env, unsigned int mod_inst_slot, unsigned int
  * @brief Swap to the correct environment and load a module instance in a given module instance slot of a given wasm
  * module in a given environment
  *
- * @param[in] env indice of the environment containing the module
+ * @param[in] env pointer to the environment structure containing the module
  * @param[in] mod_slot indice of the slot in which the module containing the function is loaded
  * @param[in] mod_inst_slot indice of the slot in which the module instance will be loaded
  * @param[in] stack_size Stack size of the WAMR exec env (it is the size of the operand stack managed by WAMR and
@@ -149,7 +163,7 @@ int wamr_env_load_mod_inst(wamr_env_t *env, unsigned int mod_slot, unsigned int 
 /**
  * @brief Swap to the correct environment and load a wasm module in a given module slot in a given environment
  *
- * @param[in] env indice of the environment in which the module should be loaded
+ * @param[in] env pointer to the environment structure in which the module should be loaded
  * @param[in] code code of the wasm module to load. The code may be modified by WAMR and should be loaded as long as the
  * module is used
  * @param[in] code_size size of the code of the wasm module to load
@@ -161,7 +175,10 @@ int wamr_env_load_mod(wamr_env_t *env, uint8_t *code, int code_size, unsigned in
 /**
  * @brief Swap and init the given environment. If the environment is already initialized, reset the environment
  *
- * @param[in] env indice of the environment to load
+ * @param[in] env pointer to the environment structure to initialize. The structure should be allocated but should not be initialized
+ * @param[in] buffer buffer dedicated to the environment
+ * @param[in] buffer_size size of the given buffer
+ * @param[in] error_buffer_size size to allocate for the error buffer
  * @return 0 in case of success, other values elsewhere
  */
 int wamr_env_init_env(wamr_env_t *env, char *buffer, uint32_t buffer_size, uint32_t error_buffer_size);
@@ -172,9 +189,14 @@ int wamr_env_init_env(wamr_env_t *env, char *buffer, uint32_t buffer_size, uint3
 void wamr_env_init(void);
 
 /**
+ * @brief Unload the current environment, restore WAMR statics to their default state
+ */
+void wamr_env_unload_env();
+
+/**
  * @brief Swap to the given environment
  *
- * @param[in] env indice of the environment to swap to
+ * @param[in] env pointer to the environment structure to swap to
  */
 void wamr_env_swap(wamr_env_t *env);
 
@@ -219,3 +241,5 @@ void wamr_env_print(wamr_env_t *env);
 void wamr_env_print_info(void);
 
 #endif
+
+/** @} */
