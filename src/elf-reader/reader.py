@@ -68,11 +68,16 @@ def write_group(elf_file, offset, group):
     write_at_pos(elf_file, offset+4, group_size)
     return 8
 
-def get_ignored_symbols():
-    with open("ignored-symbol-list.txt", "r") as f:
-        ignored_symbols = f.read().splitlines()
-    with open("ignored-symbol-type.txt", "r") as f:
-        ignored_symbols_type = f.read().splitlines()
+
+def get_ignored_symbols(ignored_symbols_files, ignored_symbols_type_files):
+    ignored_symbols = []
+    ignored_symbols_type = []
+    for ignored_symbols_file in ignored_symbols_files:
+        with open(ignored_symbols_file, "r") as f:
+            ignored_symbols = ignored_symbols + f.read().splitlines()
+    for ignored_symbols_type_file in ignored_symbols_type_files:
+        with open(ignored_symbols_type_file, "r") as f:
+            ignored_symbols_type = ignored_symbols_type + f.read().splitlines()
     return ignored_symbols, ignored_symbols_type
 
 def filter_symbols_with_list(symbols, ignored_symbols):
@@ -81,12 +86,27 @@ def filter_symbols_with_list(symbols, ignored_symbols):
 def filter_symbols_by_type(symbols, ignored_types):
     return list(filter(lambda x: x["type"] not in ignored_types, symbols))
 
-def main(elf_file, wamr_path, external_env_var_name, external_env_count_var_name):
-    ignored_symbols, ignored_symbols_types = get_ignored_symbols()
+
+def main(
+    elf_file,
+    wamr_path,
+    external_env_var_name,
+    external_env_count_var_name,
+    ignored_symbols_files,
+    ignored_symbols_type_files,
+    verbose=False,
+):
+    ignored_symbols, ignored_symbols_types = get_ignored_symbols(
+        ignored_symbols_files, ignored_symbols_type_files
+    )
 
     sections = parse_elf_section(elf_file)
-    print(f"elf_file {elf_file}, wamr_path {wamr_path}, external_env_var_name {external_env_var_name}, external_env_count_var_name {external_env_count_var_name}")
-    print("sections:", sections)
+
+    if verbose:
+        print(
+            f"elf_file {elf_file}, wamr_path {wamr_path}, external_env_var_name {external_env_var_name}, external_env_count_var_name {external_env_count_var_name}"
+        )
+        print("sections:", sections)
     print("===================")
     symbols = parse_elf(elf_file)
    
@@ -104,7 +124,10 @@ def main(elf_file, wamr_path, external_env_var_name, external_env_count_var_name
     external_env_var_count_offset = find_symbol_position(sections, other_symbols, external_env_count_var_name)
     external_env_var_count = read_at_pos(elf_file, external_env_var_count_offset)
     external_env_var_offset = find_symbol_position(sections, other_symbols, external_env_var_name)
-    print("Maximum number of environments:", external_env_var_count) # , external_env_var_count_offset
+    print(
+        "Maximum number of environments:", external_env_var_count
+    )  # , external_env_var_count_offset
+    print("===================")
 
     if external_env_var_count < len(groups):
         print("Not enought slot for external env")
@@ -115,23 +138,76 @@ def main(elf_file, wamr_path, external_env_var_name, external_env_count_var_name
 
     for group in groups:
         address_offset = address_offset + write_group(elf_file, address_offset, group)
-        print(group)
+        if verbose:
+            print(group)
         print(f"group address: {group['min_address']} = 0x{hex(group['min_address'])}")
         print("group size:", group["max_address"] - group["min_address"])
         print("\n====================")
    
     write_at_pos(elf_file, external_env_var_count_offset, len(groups))
     print("number of group: ", len(groups))
-    print("max group size: ", max([group["max_address"] - group["min_address"] for group in groups]))
-    print(f"external_env offset: {external_env_var_offset} = 0x{hex(external_env_var_offset)}")
+    print(
+        f"external_env offset: {external_env_var_offset} = 0x{hex(external_env_var_offset)}"
+    )
+    print(
+        "max group size: ",
+        max([group["max_address"] - group["min_address"] for group in groups]),
+    )
+    print(
+        "Sum of group size: ",
+        sum([group["max_address"] - group["min_address"] for group in groups]),
+    )
+
     
 if __name__ == "__main__":
-    p = argparse.ArgumentParser()
-    p.add_argument("--elf", default="../wasm-final-thread/bin/dwm1001/wasm-example.elf")
-    p.add_argument("--wamr", default="/RIOT/build/pkg/wamr/", help="Absolute path to WAMR library")
-    p.add_argument("--external_name", default="static_values")
-    p.add_argument("--external_count_name", default="static_values_count")
+    p = argparse.ArgumentParser(
+        description="A script to inject WAMR static variables address in variables of the given firmware. This script allows static_context_switcher to work. It works by grouping static variable in group and writing the group size and address to the firmware."
+    )
+    p.add_argument(
+        "--elf",
+        help="Firmware on which WAMR static variable location is read and on which the location are injected. The firmware must contain file origin of symbols to work.",
+        default="../wasm-final-thread/bin/dwm1001/wasm-example.elf",
+    )
+    p.add_argument(
+        "--wamr",
+        default="/RIOT/build/pkg/wamr/",
+        help="Absolute path to WAMR library source code",
+    )
+    p.add_argument(
+        "--external_name",
+        default="static_values",
+        help="Name of variable to inject static variables group size and address.",
+    )
+    p.add_argument(
+        "--external_count_name",
+        default="static_values_count",
+        help="Name of variable to read the maximum number of static variable group and to write the number of used group.",
+    )
+    p.add_argument(
+        "--ignored-symbols-file",
+        action="append",
+        default=[],
+        help="File containing the symbols of WAMR to be ignored when reading reading static variables. The file should contain one symbol name by line. By using the argument multiple times, multiple files can be given.",
+    )
+    p.add_argument(
+        "--ignored-symbols-type-file",
+        action="append",
+        default=[],
+        help="File containing the type of symbols of WAMR to be ignored when reading reading static variables. The file should contain one symbol type by line. By using the argument multiple times, multiple files can be given.",
+    )
+    p.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display debug information when running the application.",
+    )
     args = p.parse_args()
-    main(args.elf, args.wamr, args.external_name, args.external_count_name)
-
-
+    main(
+        args.elf,
+        args.wamr,
+        args.external_name,
+        args.external_count_name,
+        args.ignored_symbols_file,
+        args.ignored_symbols_type_file,
+        args.verbose,
+    )

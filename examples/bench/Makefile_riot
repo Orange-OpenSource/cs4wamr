@@ -33,7 +33,7 @@ ifeq ($(USE_WAMR_ENV), 1)
 endif
 
 ifeq ($(INJECT_FOR_SWAP), 1)
-  INJECT_COMMAND = python3 $(SWITCH_INJECTION_TOOL) --elf $(ELFFILE) --wamr $(RIOTBASE)/build/pkg/wamr/
+  INJECT_COMMAND = python3 $(SWITCH_INJECTION_TOOL) --elf $(ELFFILE) --wamr $(RIOTBASE)/build/pkg/wamr/  --ignored-symbols-file ignored-symbol-list.txt --ignored-symbols-type-file ignored-symbol-type.txt
 else
   INJECT_COMMAND =  
 endif

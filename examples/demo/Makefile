@@ -44,7 +44,7 @@ clean_wasm_module:
 	make -C wasm clean
 
 update-elf:
-	python3 $(SWITCH_INJECTION_TOOL) --elf $(ELFFILE) --wamr $(RIOTBASE)/build/pkg/wamr/
+	python3 $(SWITCH_INJECTION_TOOL) --elf $(ELFFILE) --wamr $(RIOTBASE)/build/pkg/wamr/ --ignored-symbols-file ignored-symbol-list.txt --ignored-symbols-type-file ignored-symbol-type.txt
 
 update-bin: 
 	$(Q)$(OBJCOPY) $(OFLAGS) -Obinary $(ELFFILE) $(BINFILE)
