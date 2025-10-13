@@ -5,6 +5,15 @@
 
 The repository proposes a toolkit which implements a configuration switching mechanism to allows running multiple instances of [WebAssembly Micro Runtime (WAMR)](https://github.com/bytecodealliance/wasm-micro-runtime/) at the same time on single-core microcontrollers. 
 
+### Citation
+
+If you cite this work, please use:
+```
+B. Buil, C. Gaber, E. Baccelli, S. Bouzefrane. TinyML as a Service on Multi-Tenant Microcontrollers. Proceedings of the 22nd International Conference on Embedded Wireless Systems and Networks (EWSN 2025).
+```
+
+For more information on the work, you can read [this publication](https://inria.hal.science/hal-05304192v1/document).
+
 
 ### Context-switching mechanism
 
