@@ -10,6 +10,7 @@ see the "LICENSE" file for more details or https://opensource.org/license/mit
 from elf_utils import parse_elf, parse_elf_section, find_symbol_position
 from binary_utils import read_at_pos, write_at_pos
 import argparse
+import sys
 
 
 def partition_lib_symbols(lib_path, symbols, filter_fnc=lambda x: False):
@@ -123,6 +124,7 @@ def main(
     ignored_symbols_files,
     ignored_symbols_type_files,
     verbose=False,
+    max_group_size_check=0,
 ):
     ignored_symbols, ignored_symbols_types = get_ignored_symbols(
         ignored_symbols_files, ignored_symbols_type_files
@@ -147,6 +149,7 @@ def main(
 
     if len(lib_symbols) == 0:
         print("Error: No lib symbol matched.")
+        sys.exit(1)
         return
 
     groups = [create_first_symbol_group(lib_symbols)]
@@ -168,9 +171,17 @@ def main(
     if external_env_var_count < len(groups):
         print("Not enought slot for external env")
         print("len group: ", len(groups))
+        sys.exit(1)
         return
 
     address_offset = external_env_var_offset
+
+
+    max_group_size = max([group["max_address"] - group["min_address"] for group in groups])
+    if max_group_size_check != 0 and max_group_size > max_group_size_check:
+        print(f"The longest group size ({max_group_size}) is bigger that the limit for the maximum group size ({max_group_size_check}): {max_group_size} > {max_group_size_check}")
+        sys.exit(1)
+        return
 
     for group in groups:
         address_offset = address_offset + write_group(elf_file, address_offset, group)
@@ -187,7 +198,7 @@ def main(
     )
     print(
         "max group size: ",
-        max([group["max_address"] - group["min_address"] for group in groups]),
+        max_group_size
     )
     print(
         "Sum of group size: ",
@@ -237,6 +248,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Display debug information when running the application.",
     )
+    p.add_argument(
+        "--max-group-size",
+        default=0,
+        type=int,
+        help="Maximum size for group size. This value must be lower or equal to STATIC_CONTEXT_SWITCHER_MAX_STATIC_SIZE."
+    )
     args = p.parse_args()
     main(
         args.elf,
@@ -246,4 +263,5 @@ if __name__ == "__main__":
         args.ignored_symbols_file,
         args.ignored_symbols_type_file,
         args.verbose,
+        args.max_group_size
     )

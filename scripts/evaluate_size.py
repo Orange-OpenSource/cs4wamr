@@ -58,8 +58,19 @@ def print_size(symbols):
     print(f"\t\t=> ROM usage : {size_per_memory.get("text", 0) + size_per_memory.get("data", 0)}")
     print(f"\t\t=> RAM usage : {size_per_memory.get("bss", 0) + size_per_memory.get("data", 0)}")
     
+def check_overlapping_categories(categories):
+    for key_i in categories:
+        for key_j in categories:
+            if key_i == key_j:
+                continue
+            if categories[key_i].startswith(categories[key_j]):
+                print(f"\nPath overlapping between categories {key_i} and {key_j}: path {categories[key_i]} is included in {categories[key_i]}")
+                return False
+    return True
 
 def main(elf_file, categories):
+    if not check_overlapping_categories(categories):
+        return
     symbols = parse_elf(elf_file)
     print("Total size for elf:")
     print_size(symbols)
