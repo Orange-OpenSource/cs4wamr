@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 static uint8_t default_env_values[STATIC_CONTEXT_SWITCHER_MAX_NUMBER_STATIC][STATIC_CONTEXT_SWITCHER_MAX_STATIC_SIZE];
 static volatile static_context_switcher_static_values_t static_values[STATIC_CONTEXT_SWITCHER_MAX_NUMBER_STATIC] = {
@@ -102,16 +103,16 @@ void static_context_switcher_print_env(static_context_switcher_env_t *env)
     printf("static_context_switcher_env: %p\n", env);
     for (uint32_t i = 0; i < static_values_count; i++)
     {
-        printf("\tstatic value: %p, static value size: %lu\n", env->static_values[i], env->static_values_size[i]);
+        printf("\tstatic value: %p, static value size: %" PRIu32 "\n", env->static_values[i], env->static_values_size[i]);
     }
 }
 void static_context_switcher_print_info(void)
 {
     printf("static_context_switcher_env info:\n");
-    printf("\tcurrent env %p, &current env %p, static_values_count %lu\n", current_env, &current_env,
+    printf("\tcurrent env %p, &current env %p, static_values_count %" PRIu32 "\n", current_env, &current_env,
            static_values_count);
     for (uint32_t i = 0; i < static_values_count; i++)
     {
-        printf("\tstatic value: %p, static value size: %lu\n", (void *)static_values[i].ptr, static_values[i].size);
+        printf("\tstatic value: %p, static value size: %" PRIu32 "\n", (void *)static_values[i].ptr, static_values[i].size);
     }
 }

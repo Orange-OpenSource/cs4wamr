@@ -8,7 +8,9 @@
  *
  */
 #include "wamr_env_thread.h"
+#ifndef BOARD_NATIVE
 #include "irq_arch.h"
+#endif
 #include "wamr_env.h"
 #include <assert.h>
 #include <stdint.h>
@@ -44,19 +46,25 @@ kernel_pid_t wamr_env_thread_get_pid(wamr_env_thread_number_t env)
 
 void wamr_env_thread_swap(wamr_env_thread_number_t env)
 {
+#ifndef BOARD_NATIVE
     unsigned state = irq_disable();
+#endif
     if (env_threads[env].env_state == ENV_UNINITIALIZED)
     {
-        printf("Swapping to unintialized thread %ld\n", env);
+        printf("Swapping to unintialized thread %" PRIu32 "\n", env);
+#ifndef BOARD_NATIVE
         irq_restore(state);
+#endif
         return;
     }
     if (env_threads[env].env_state == ENV_IN_SUB_ENV)
     {
-        printf("Swapping to environment: running another environment (Sub env state): env %ld\n", env);
+        printf("Swapping to environment: running another environment (Sub env state): env %" PRIu32 "\n", env);
     }
     wamr_env_swap(&env_threads[env].env);
+#ifndef BOARD_NATIVE
     irq_restore(state);
+#endif
 }
 
 static void _wamr_env_thread_sched_callback(kernel_pid_t active, kernel_pid_t next)
@@ -268,21 +276,27 @@ void wamr_env_thread_save(wamr_env_thread_number_t env, wamr_env_thread_t *savin
         printf("Env should be paused before saving !\n");
         return;
     }
+#ifndef BOARD_NATIVE
     unsigned state = irq_disable();
+#endif
     memcpy(saving_env_thread, &env_threads[env], sizeof(wamr_env_thread_t));
     memcpy(saving_buffer, env_threads[env].buffer, env_threads[env].buffer_size);
+#ifndef BOARD_NATIVE
     irq_restore(state);
+#endif
 }
 
 void wamr_env_thread_restore(wamr_env_thread_number_t env, wamr_env_thread_t *saved_env_thread, char *saved_buffer,
-                              uint32_t saved_buffer_size)
+                             uint32_t saved_buffer_size)
 {
     if (env_threads[env].buffer_size > saved_buffer_size)
     {
         printf("Saved buffer too small\n");
         return;
     }
+#ifndef BOARD_NATIVE
     unsigned state = irq_disable();
+#endif
     if (env_threads[env].env_state >= ENV_RUNNING && env_threads[env].thread_pid != -1)
     {
         thread_t *thread = thread_get(env_threads[env].thread_pid);
@@ -294,7 +308,9 @@ void wamr_env_thread_restore(wamr_env_thread_number_t env, wamr_env_thread_t *sa
     {
         wamr_env_thread_pause(env);
     }
+#ifndef BOARD_NATIVE
     irq_restore(state);
+#endif
 }
 
 void wamr_env_thread_sleep_time(ztimer_clock_t *clock, uint32_t duration)
@@ -305,7 +321,9 @@ void wamr_env_thread_sleep_time(ztimer_clock_t *clock, uint32_t duration)
     {
         return;
     }
+#ifndef BOARD_NATIVE
     assert(!irq_is_in());
+#endif
     env_threads[env].mutex = (mutex_t)MUTEX_INIT_LOCKED;
 
     /* correct board / MCU specific overhead */
@@ -430,7 +448,7 @@ bool wamr_env_thread_is_env_initialized(wamr_env_thread_number_t env)
 void wamr_env_thread_print(wamr_env_thread_number_t env)
 {
     printf("wamr env thread:\n");
-    printf("\tthread stack %p, thread stack size: %ld\n", env_threads[env].thread_stack,
+    printf("\tthread stack %p, thread stack size: %" PRIu32 "\n", env_threads[env].thread_stack,
            env_threads[env].thread_stack_size);
     printf("\tenv_state %d\n", env_threads[env].env_state);
     wamr_env_print(&env_threads[env].env);

@@ -11,6 +11,7 @@
 #include "wamr_env_thread.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #define MAX_WAMR_ENV_BUFFER_SIZE 15000
 
@@ -32,7 +33,7 @@ int make_thread_sleep(int argc, char **argv)
 {
     wamr_env_thread_number_t env = _args_to_env(argc, argv);
     wamr_env_thread_pause(env);
-    printf("sleeping env %ld\n", env);
+    printf("sleeping env %" PRIi32 "\n", env);
     return 0;
 }
 
@@ -40,7 +41,7 @@ int make_thread_resume(int argc, char **argv)
 {
     wamr_env_thread_number_t env = _args_to_env(argc, argv);
     wamr_env_thread_resume(env);
-    printf("resuming env  %ld\n", env);
+    printf("resuming env  %" PRIi32 "\n", env);
     return 0;
 }
 
@@ -49,7 +50,7 @@ int save_env(int argc, char **argv)
     wamr_env_thread_number_t env = _args_to_env(argc, argv);
     wamr_env_thread_save(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
     saved_env_number = env;
-    printf("saving env  %ld\n", env);
+    printf("saving env  %" PRIi32 "\n", env);
     return 0;
 }
 
@@ -62,7 +63,7 @@ int load_env(int argc, char **argv)
         return 1;
     }
     wamr_env_thread_restore(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
-    printf("loading env  %ld\n", env);
+    printf("loading env  %" PRIi32 "\n", env);
     return 0;
 }
 
@@ -73,7 +74,7 @@ int fast_save(int argc, char **argv)
     wamr_env_thread_save(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
     wamr_env_thread_resume(env);
     saved_env_number = env;
-    printf("fast saving env  %ld\n", env);
+    printf("fast saving env  %" PRIi32 "\n", env);
     return 0;
 }
 
@@ -87,7 +88,7 @@ int fast_load(int argc, char **argv)
     }
     wamr_env_thread_restore(env, &saved_env_thread, saving_buffer, sizeof(saving_buffer));
     wamr_env_thread_resume(env);
-    printf("fast loading env  %ld\n", env);
+    printf("fast loading env  %" PRIi32 "\n", env);
     return 0;
 }
 
@@ -104,7 +105,7 @@ int wamr_buffer_stat(int argc, char **argv)
         wamr_env_thread_swap(i);
         wasm_runtime_get_mem_alloc_info(&mem_alloc_info);
         kernel_pid_t pid = wamr_env_thread_get_pid(i);
-        printf("env: %d, pid: %d, highmark_size: %ld, total_free_size  %ld, total_size %ld\n", i, pid,
+        printf("env: %d, pid: %d, highmark_size: %" PRIu32 ", total_free_size  %" PRIu32 ", total_size %" PRIu32 "\n", i, pid,
                mem_alloc_info.highmark_size, mem_alloc_info.total_free_size, mem_alloc_info.total_size);
     }
 
