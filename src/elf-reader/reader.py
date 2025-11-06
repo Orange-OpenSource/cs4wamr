@@ -22,6 +22,8 @@ def partition_lib_symbols(lib_path, symbols, filter_fnc=lambda x: False):
             symbol["path"].startswith(lib_path)
             and symbol["type"] != "t"
             and symbol["type"] != "T"
+            and symbol["type"] != "r"
+            and symbol["type"] != "R"
             and not filter_fnc(symbol)
         ):
             lib_symbols.append(symbol)
