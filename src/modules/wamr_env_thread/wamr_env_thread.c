@@ -20,8 +20,17 @@
 #define WAMR_ENV_DEBUG 0
 #define WAMR_ENV_DEBUG_MUTEX 0
 
+typedef struct thread_arg_s
+{
+    unsigned int mod_inst_slot;
+    unsigned int fct_slot;
+    unsigned int sleep_duration;
+
+} thread_arg_t;
+
 wamr_env_thread_t env_threads[ENV_AMOUNT];
 ztimer_t env_timers[ENV_AMOUNT]; // Cannot be in env_thread as ztimer_base_t copy might break list !
+thread_arg_t thread_args[ENV_AMOUNT];
 
 wamr_env_thread_number_t wamr_env_thread_get_env_from_pid(kernel_pid_t pid)
 {
@@ -137,17 +146,66 @@ void wamr_env_thread_init(void)
     sched_register_cb(&_wamr_env_thread_sched_callback);
 }
 
-static const uint32_t max_slot_in_options = 256;
+
+static inline void _wamr_env_thread_sleep_time_arm(const wamr_env_thread_number_t env, ztimer_clock_t *clock, uint32_t duration)
+{
+    if (env == -1)
+    {
+        return;
+    }
+#ifndef BOARD_NATIVE
+    assert(!irq_is_in());
+#endif
+    env_threads[env].mutex = (mutex_t)MUTEX_INIT_LOCKED;
+
+    /* correct board / MCU specific overhead */
+    if (duration > clock->adjust_sleep)
+    {
+        duration -= clock->adjust_sleep;
+    }
+    else
+    {
+        duration = 0;
+    }
+
+#if WAMR_ENV_DEBUG_MUTEX == 1
+    printf("Set ztimer %ld\n", env);
+#endif
+    ztimer_set(clock, &env_timers[env], duration);
+#if WAMR_ENV_DEBUG_MUTEX == 1
+    printf("Mutex lock %ld\n", env);
+#endif
+}
+
+
+static inline void _wamr_env_thread_sleep_time_lock(const wamr_env_thread_number_t env)
+{
+    mutex_lock(&env_threads[env].mutex);
+#if WAMR_ENV_DEBUG_MUTEX == 1
+    printf("Mutex unlock %ld\n", env);
+#endif
+    if (wamr_env_thread_is_env_paused(env))
+    {
+#if WAMR_ENV_DEBUG_MUTEX == 1
+        printf("Mutex thread pause %ld\n", env);
+#endif
+        thread_sleep();
+    }
+}
+
+void wamr_env_thread_sleep_time(ztimer_clock_t *clock, const uint32_t duration)
+{
+    wamr_env_thread_number_t env = wamr_env_thread_get_env_from_pid(thread_getpid());
+    _wamr_env_thread_sleep_time_arm(env, clock, duration);
+    _wamr_env_thread_sleep_time_lock(env);   
+}
+
 
 static void *_start_thread_func(void *args)
 {
-    /*uint32_t *args_uint = args;
-    wamr_env_number_t env = args_uint[0];
-    int fct_slot = args_uint[1];*/
-    uint32_t args_n = (uint32_t)args;
-    wamr_env_thread_number_t env = args_n % max_slot_in_options;
-    unsigned int mod_inst_slot = (args_n / max_slot_in_options) % max_slot_in_options;
-    unsigned int fct_slot = (args_n / (max_slot_in_options * max_slot_in_options)) % max_slot_in_options;
+    wamr_env_thread_number_t env = (wamr_env_thread_number_t)args;
+    unsigned int mod_inst_slot = thread_args[env].mod_inst_slot;
+    unsigned int fct_slot = thread_args[env].fct_slot;
 #if WAMR_ENV_DEBUG == 1
     printf("New thread pid=%d env=%ld inst=%d func=%d\n", thread_getpid(), env, mod_inst_slot, fct_slot);
 #endif
@@ -165,14 +223,62 @@ static void *_start_thread_func(void *args)
 
 int wamr_env_thread_call_func(wamr_env_thread_number_t env, unsigned int mod_inst_slot, unsigned int fct_slot)
 {
-    uint32_t args = env + max_slot_in_options * mod_inst_slot + (max_slot_in_options * max_slot_in_options) * fct_slot;
+    thread_args[env].mod_inst_slot = mod_inst_slot;
+    thread_args[env].fct_slot = fct_slot;
+    uint32_t args = env;
 #if WAMR_ENV_DEBUG == 1
     printf("Call %ld %d\n", env, fct_slot);
 #endif
     kernel_pid_t pid = thread_create(
         env_threads[env].thread_stack, env_threads[env].thread_stack_size,
-        // THREAD_PRIORITY_IDLE - 1, THREAD_CREATE_WOUT_YIELD, &_start_thread_func, (void*)args, "wamr env thread");
         THREAD_PRIORITY_IDLE - 1, THREAD_CREATE_WOUT_YIELD, &_start_thread_func, (void *)args, "wamr env thread");
+
+#if WAMR_ENV_DEBUG == 1
+    printf("env call func env=%ld pid=%d\n", env, pid);
+#endif
+    return 0;
+}
+
+static void *_start_thread_func_loop(void *args)
+{
+    wamr_env_thread_number_t env = (wamr_env_thread_number_t)args;
+    unsigned int mod_inst_slot = thread_args[env].mod_inst_slot;
+    unsigned int fct_slot = thread_args[env].fct_slot;
+    unsigned int loop_time_in_us = thread_args[env].sleep_duration;
+#if WAMR_ENV_DEBUG == 1
+    printf("New thread pid=%d env=%ld inst=%d func=%d\n", thread_getpid(), env, mod_inst_slot, fct_slot);
+#endif
+    env_threads[env].thread_pid = thread_getpid();
+    env_threads[env].env_state = ENV_RUNNING;
+    uint32_t argv[2] = {0};
+
+    while(argv[0] == 0)
+    {
+        _wamr_env_thread_sleep_time_arm(env, ZTIMER_USEC, loop_time_in_us);
+        wamr_env_call_func_with_args(&env_threads[env].env, mod_inst_slot, fct_slot, 0, argv);
+        _wamr_env_thread_sleep_time_lock(env);
+    }
+
+#if WAMR_ENV_DEBUG == 1
+    printf("End of thread pid=%d\n", thread_getpid());
+#endif
+    env_threads[env].thread_pid = -1;
+    env_threads[env].env_state = ENV_STOPPED;
+    return NULL;
+}
+
+int wamr_env_thread_call_func_loop(wamr_env_thread_number_t env, unsigned int mod_inst_slot, unsigned int fct_slot, unsigned int loop_duration_in_us)
+{
+    thread_args[env].mod_inst_slot = mod_inst_slot;
+    thread_args[env].fct_slot = fct_slot;
+    thread_args[env].sleep_duration = loop_duration_in_us;
+    uint32_t args = env;
+#if WAMR_ENV_DEBUG == 1
+    printf("Call %ld %d\n", env, fct_slot);
+#endif
+    kernel_pid_t pid = thread_create(
+        env_threads[env].thread_stack, env_threads[env].thread_stack_size,
+        THREAD_PRIORITY_IDLE - 1, THREAD_CREATE_WOUT_YIELD, &_start_thread_func_loop, (void *)env, "wamr env thread");
 
 #if WAMR_ENV_DEBUG == 1
     printf("env call func env=%ld pid=%d\n", env, pid);
@@ -313,48 +419,6 @@ void wamr_env_thread_restore(wamr_env_thread_number_t env, wamr_env_thread_t *sa
 #endif
 }
 
-void wamr_env_thread_sleep_time(ztimer_clock_t *clock, uint32_t duration)
-{
-    wamr_env_thread_number_t env = wamr_env_thread_get_env_from_pid(thread_getpid());
-
-    if (env == -1)
-    {
-        return;
-    }
-#ifndef BOARD_NATIVE
-    assert(!irq_is_in());
-#endif
-    env_threads[env].mutex = (mutex_t)MUTEX_INIT_LOCKED;
-
-    /* correct board / MCU specific overhead */
-    if (duration > clock->adjust_sleep)
-    {
-        duration -= clock->adjust_sleep;
-    }
-    else
-    {
-        duration = 0;
-    }
-
-#if WAMR_ENV_DEBUG_MUTEX == 1
-    printf("Set ztimer %ld\n", env);
-#endif
-    ztimer_set(clock, &env_timers[env], duration);
-#if WAMR_ENV_DEBUG_MUTEX == 1
-    printf("Mutex lock %ld\n", env);
-#endif
-    mutex_lock(&env_threads[env].mutex);
-#if WAMR_ENV_DEBUG_MUTEX == 1
-    printf("Mutex unlock %ld\n", env);
-#endif
-    if (wamr_env_thread_is_env_paused(env))
-    {
-#if WAMR_ENV_DEBUG_MUTEX == 1
-        printf("Mutex thread pause %ld\n", env);
-#endif
-        thread_sleep();
-    }
-}
 
 /**
  * Facade function
