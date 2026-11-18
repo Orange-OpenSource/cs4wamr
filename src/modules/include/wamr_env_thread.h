@@ -18,6 +18,7 @@
  *              thread by container
  *
  * @author      Bastien BUIL <bastien.buil@orange.com>
+ * @todo        If there is an use case, the library could be modified to have multiple threads, by instance.
  */
 #ifndef WAMR_ENV_THREAD_HEADER
 #define WAMR_ENV_THREAD_HEADER
@@ -110,6 +111,21 @@ void wamr_env_thread_init(void);
  */
 int wamr_env_thread_call_func(wamr_env_thread_number_t env, unsigned int mod_inst_slot, unsigned int fct_slot);
 
+
+/**
+ * @brief Create a new thread and repeatedly call the function loaded in the given environment at the given slot.
+ * When the thread will be running, a swap will be automatically done to put the correct environment.
+ * The loop will stop if the Wasm function returns a value other than zero.
+ * When loop_duration_in_us time as passed, the thread is added back to the run queue, so the thread might not run immediatly.
+ *
+ * @param[in] env indice of the environment of the function
+ * @param[in] mod_inst_slot slot of the module instance to run
+ * @param[in] fct_slot slot of the function to run
+ * @param[in] loop_duration_in_us time between function call
+ * @return 0 in case of success, other values elsewhere
+ */
+int wamr_env_thread_call_func_loop(wamr_env_thread_number_t env, unsigned int mod_inst_slot, unsigned int fct_slot, unsigned int loop_duration_in_us);
+
 /**
  * @brief From a thread associated to an environment, call a function of another environment. This function can be
  * called from native function.
@@ -174,7 +190,7 @@ void wamr_env_thread_restore(wamr_env_thread_number_t env, wamr_env_thread_t *sa
  * @param[in] clock z_timer clock
  * @param[in] duration duraction in the unit of the clock
  */
-void wamr_env_thread_sleep_time(ztimer_clock_t *clock, uint32_t duration); // Sleep the env of the current thread
+void wamr_env_thread_sleep_time(ztimer_clock_t *clock, const uint32_t duration); // Sleep the env of the current thread
 
 /*
  * These functions are direct call to the wamr env functions
